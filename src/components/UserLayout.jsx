@@ -6,9 +6,7 @@ const UserLayout = () => {
   return (
     <>
       <Navbar />
-      <main style={{ padding: '1rem' }}>
-        <Outlet />
-      </main>
+      <Outlet/>
     </>
   )
 }

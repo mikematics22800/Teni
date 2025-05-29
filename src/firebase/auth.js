@@ -3,10 +3,25 @@ import {
   getAuth,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signOut
+  signOut,
+  GoogleAuthProvider,
+  signInWithPopup,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 
-const auth = getAuth(app);
+const auth = getAuth(app); 
+
+const provider = new GoogleAuthProvider();
+
+export const loginWithGoogle = async () => {
+  if (typeof window === 'undefined') return;
+  try {
+    const result = await signInWithPopup(auth, provider);
+    return result;
+  } catch (error) {
+    throw error;
+  }
+};
 
 export const register = async (email, password) => {
   if (typeof window === 'undefined') return;
@@ -35,6 +50,15 @@ export const logout = async () => {
   
   try {
     await signOut(auth);
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const resetPassword = async (email) => {
+  if (typeof window === 'undefined') return;
+  try {
+    await sendPasswordResetEmail(auth, email);
   } catch (error) {
     throw error;
   }
