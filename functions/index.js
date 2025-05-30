@@ -24,6 +24,7 @@ exports.sendSupportEmail = functions.https.onCall(async (data, context) => {
 
   const { subject, message } = data;
   const userEmail = context.auth.token.email;
+  const userId = context.auth.uid;
 
   if (!subject || !message) {
     throw new functions.https.HttpsError(
@@ -34,15 +35,25 @@ exports.sendSupportEmail = functions.https.onCall(async (data, context) => {
 
   const mailOptions = {
     from: process.env.EMAIL_USER,
-    to: '',
+    to: process.env.SUPPORT_EMAIL || process.env.EMAIL_USER, // Send to support email if configured
     subject: `Support Request: ${subject}`,
-    text: `From: ${userEmail}\n\n${message}`
+    text: `Support Request Details:
+From: ${userEmail}
+User ID: ${userId}
+Subject: ${subject}
+
+Message:
+${message}
+
+This is an automated support request from the application.`,
+    replyTo: userEmail // Allow support team to reply directly to the user
   };
 
   try {
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error) {
+    console.error('Failed to send support email:', error);
     throw new functions.https.HttpsError(
       'internal',
       'Failed to send email',

@@ -1,17 +1,43 @@
 import React, { useState } from 'react';
-import tripadvisorApi from '../api/tripadvisor';
+import { searchAirport, searchOneWayFlights, searchRoundTripFlights } from '../api/expedia';
 
 export default function Flights() {
   const [searchParams, setSearchParams] = useState({
     from: '',
     to: '',
-    date: '',
+    departureDate: '',
+    returnDate: '',
     adults: 1,
-    cabinClass: 'ECONOMY'
+    cabinClass: 'COACH',
+    tripType: 'one-way'
   });
   const [flights, setFlights] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [airports, setAirports] = useState({ from: [], to: [] });
+
+  const handleAirportSearch = async (query, type) => {
+    if (!query || query.length < 2) return;
+    
+    try {
+      const data = await searchAirport(query);
+      if (data && data.data) {
+        setAirports(prev => ({
+          ...prev,
+          [type]: data.data.map(airport => ({
+            code: airport.regionNames.shortName.match(/\(([A-Z]{3})/)?.[1] || '',
+            name: airport.regionNames.primaryDisplayName,
+            city: airport.regionNames.fullName.split(',')[0],
+            country: airport.hierarchyInfo.country.name,
+            coordinates: airport.coordinates
+          }))
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to search airports:', err);
+      setError('Failed to search airports. Please try again.');
+    }
+  };
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -19,25 +45,33 @@ export default function Flights() {
     setError('');
 
     try {
-      // First, get location IDs for from and to locations
-      const fromLocation = await tripadvisorApi.searchLocations(searchParams.from);
-      const toLocation = await tripadvisorApi.searchLocations(searchParams.to);
-
-      if (!fromLocation.data?.[0]?.locationId || !toLocation.data?.[0]?.locationId) {
-        throw new Error('Could not find locations');
+      let data;
+      if (searchParams.tripType === 'one-way') {
+        data = await searchOneWayFlights(
+          searchParams.from,
+          searchParams.to,
+          searchParams.departureDate,
+          searchParams.cabinClass,
+          searchParams.adults
+        );
+      } else {
+        data = await searchRoundTripFlights(
+          searchParams.from,
+          searchParams.to,
+          searchParams.departureDate,
+          searchParams.returnDate,
+          searchParams.cabinClass,
+          searchParams.adults
+        );
       }
 
-      const data = await tripadvisorApi.searchFlights({
-        fromId: fromLocation.data[0].locationId,
-        toId: toLocation.data[0].locationId,
-        date: searchParams.date,
-        adults: searchParams.adults,
-        cabinClass: searchParams.cabinClass
-      });
-
-      setFlights(data.data || []);
+      if (data && data.data) {
+        setFlights(data.data);
+      } else {
+        setError('No flights found. Please try different search criteria.');
+      }
     } catch (err) {
-      setError('Failed to search flights');
+      setError('Failed to search flights. Please try again.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -50,57 +84,118 @@ export default function Flights() {
       ...prev,
       [name]: value
     }));
+
+    if (name === 'from' || name === 'to') {
+      handleAirportSearch(value, name);
+    }
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Search Flights</h1>
-      
       <form onSubmit={handleSearch} className="mb-8 bg-white p-6 rounded-lg shadow-md">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               From
             </label>
-            <input
-              type="text"
-              name="from"
-              value={searchParams.from}
-              onChange={handleInputChange}
-              placeholder="City or Airport"
-              className="w-full p-2 border rounded-md"
-              required
-            />
+            <div className="relative">
+              <input
+                type="text"
+                name="from"
+                value={searchParams.from}
+                onChange={handleInputChange}
+                placeholder="Search airport or city"
+                className="w-full p-2 border rounded-md"
+                required
+              />
+              {airports.from.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  {airports.from.map((airport) => (
+                    <div
+                      key={airport.code}
+                      className="p-2 hover:bg-gray-100 cursor-pointer"
+                      onClick={() => {
+                        setSearchParams(prev => ({ ...prev, from: airport.code }));
+                        setAirports(prev => ({ ...prev, from: [] }));
+                      }}
+                    >
+                      <div className="font-medium">{airport.name}</div>
+                      <div className="text-sm text-gray-600">
+                        {airport.city}, {airport.country}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               To
             </label>
+            <div className="relative">
+              <input
+                type="text"
+                name="to"
+                value={searchParams.to}
+                onChange={handleInputChange}
+                placeholder="Search airport or city"
+                className="w-full p-2 border rounded-md"
+                required
+              />
+              {airports.to.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  {airports.to.map((airport) => (
+                    <div
+                      key={airport.code}
+                      className="p-2 hover:bg-gray-100 cursor-pointer"
+                      onClick={() => {
+                        setSearchParams(prev => ({ ...prev, to: airport.code }));
+                        setAirports(prev => ({ ...prev, to: [] }));
+                      }}
+                    >
+                      <div className="font-medium">{airport.name}</div>
+                      <div className="text-sm text-gray-600">
+                        {airport.city}, {airport.country}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Departure Date
+            </label>
             <input
-              type="text"
-              name="to"
-              value={searchParams.to}
+              type="date"
+              name="departureDate"
+              value={searchParams.departureDate}
               onChange={handleInputChange}
-              placeholder="City or Airport"
               className="w-full p-2 border rounded-md"
               required
             />
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date
-            </label>
-            <input
-              type="date"
-              name="date"
-              value={searchParams.date}
-              onChange={handleInputChange}
-              className="w-full p-2 border rounded-md"
-              required
-            />
-          </div>
+          {searchParams.tripType === 'round-trip' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Return Date
+              </label>
+              <input
+                type="date"
+                name="returnDate"
+                value={searchParams.returnDate}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded-md"
+                required
+              />
+            </div>
+          )}
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -119,21 +214,38 @@ export default function Flights() {
           </div>
         </div>
 
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Cabin Class
-          </label>
-          <select
-            name="cabinClass"
-            value={searchParams.cabinClass}
-            onChange={handleInputChange}
-            className="w-full p-2 border rounded-md"
-          >
-            <option value="ECONOMY">Economy</option>
-            <option value="PREMIUM_ECONOMY">Premium Economy</option>
-            <option value="BUSINESS">Business</option>
-            <option value="FIRST">First Class</option>
-          </select>
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Trip Type
+            </label>
+            <select
+              name="tripType"
+              value={searchParams.tripType}
+              onChange={handleInputChange}
+              className="w-full p-2 border rounded-md"
+            >
+              <option value="one-way">One Way</option>
+              <option value="round-trip">Round Trip</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Cabin Class
+            </label>
+            <select
+              name="cabinClass"
+              value={searchParams.cabinClass}
+              onChange={handleInputChange}
+              className="w-full p-2 border rounded-md"
+            >
+              <option value="COACH">Economy</option>
+              <option value="PREMIUM_COACH">Premium Economy</option>
+              <option value="BUSINESS">Business</option>
+              <option value="FIRST">First Class</option>
+            </select>
+          </div>
         </div>
 
         <button
@@ -146,32 +258,32 @@ export default function Flights() {
       </form>
 
       {error && (
-        <div className="text-red-500 mb-4">{error}</div>
+        <div className="text-red-500 mb-4 p-4 bg-red-50 rounded-md">{error}</div>
       )}
 
       <div className="space-y-4">
         {flights.map((flight) => (
           <div
-            key={flight.flightId}
+            key={flight.id}
             className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
           >
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-xl font-semibold">{flight.airline}</h2>
-                <p className="text-gray-600">{flight.flightNumber}</p>
+                <h2 className="text-xl font-semibold">{flight.validatingAirlineCodes[0]}</h2>
+                <p className="text-gray-600">{flight.itineraries[0].segments[0].number}</p>
               </div>
               <div className="text-right">
                 <p className="text-2xl font-bold text-blue-600">
-                  ${flight.price}
+                  {flight.price.total}
                 </p>
-                <p className="text-gray-500">{flight.cabinClass}</p>
+                <p className="text-gray-500">{flight.travelerPricings[0].fareDetailsBySegment[0].cabin}</p>
               </div>
             </div>
             
             <div className="mt-4 flex items-center justify-between">
               <div>
-                <p className="text-lg font-semibold">{flight.departureTime}</p>
-                <p className="text-gray-600">{flight.departureAirport}</p>
+                <p className="text-lg font-semibold">{flight.itineraries[0].segments[0].departure.at}</p>
+                <p className="text-gray-600">{flight.itineraries[0].segments[0].departure.iataCode}</p>
               </div>
               <div className="flex-1 mx-4">
                 <div className="border-t border-gray-300 relative">
@@ -180,12 +292,12 @@ export default function Flights() {
                   </div>
                 </div>
                 <p className="text-center text-sm text-gray-500 mt-2">
-                  {flight.duration}
+                  {flight.itineraries[0].duration}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-lg font-semibold">{flight.arrivalTime}</p>
-                <p className="text-gray-600">{flight.arrivalAirport}</p>
+                <p className="text-lg font-semibold">{flight.itineraries[0].segments[0].arrival.at}</p>
+                <p className="text-gray-600">{flight.itineraries[0].segments[0].arrival.iataCode}</p>
               </div>
             </div>
           </div>

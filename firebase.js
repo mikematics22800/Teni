@@ -1,17 +1,19 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_Key,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MESASUREMENT_ID
+  apiKey: "AIzaSyDtC9J73JGg-CnficpFdyXEdRt7NYgSuvM",
+  authDomain: "teni-631ec.firebaseapp.com",
+  projectId: "teni-631ec",
+  storageBucket: "teni-631ec.firebasestorage.app",
+  messagingSenderId: "206451130638",
+  appId: "1:206451130638:web:8b1e7cefcbb4d34c28575f",
+  measurementId: "G-7YW9NJ5ZT3"
 };
 
-// Initialize Firebase
+// Initialize Firebase`
 const app = initializeApp(firebaseConfig);
 
 export default app;

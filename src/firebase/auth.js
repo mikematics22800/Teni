@@ -8,6 +8,7 @@ import {
   signInWithPopup,
   sendPasswordResetEmail,
 } from 'firebase/auth';
+import { createUserDocument } from './firestore';
 
 const auth = getAuth(app); 
 
@@ -17,6 +18,8 @@ export const loginWithGoogle = async () => {
   if (typeof window === 'undefined') return;
   try {
     const result = await signInWithPopup(auth, provider);
+    // Create user document for Google sign-in
+    await createUserDocument(result.user);
     return result;
   } catch (error) {
     throw error;

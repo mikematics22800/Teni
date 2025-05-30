@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { login, loginWithGoogle } from '../firebase/auth';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import travel from '../assets/travel.png';
+import VideoBackground from '../components/VideoBackground';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -88,9 +89,10 @@ export default function Login() {
 
   return (
     <div className='flex items-center justify-center h-screen'>
-      <form className='w-96 p-8 gap-4 flex flex-col items-center bg-gray-200 shadow-lg rounded-3xl' onSubmit={handleSubmit}>
-        <img src={travel} alt="travel" className='w-20' />
-        <h1 className='text-2xl font-bold italic'>Teni</h1>
+      <VideoBackground />
+      <form className='w-96 p-8 gap-4 flex flex-col items-center bg-black/50 shadow-lg rounded-3xl' onSubmit={handleSubmit}>
+        <h1 className='text-4xl font-bold italic  text-white text-center'>Teni</h1>
+        <h2 className='text-lg font-bold text-white text-center'>Where to next?</h2>
         {error && (
           <div className='w-full p-2 text-sm text-red-600 bg-red-100 rounded-md justify-center flex'>
             {error}
@@ -121,22 +123,24 @@ export default function Login() {
             {inputType === 'password' ? <VisibilityOff className='w-5 h-5' onClick={toggleInputType}/> : <Visibility className='w-5 h-5' onClick={toggleInputType}/>}
           </button>
         </div>
-        <button type='submit' className='w-full p-2 rounded-md bg-blue-500 text-white font cursor-pointer hover:bg-blue-600 transition-colors'>Login</button>
+        <button type='submit' className='w-full p-2 rounded-md bg-blue-600 text-white font cursor-pointer hover:bg-blue-600 transition-colors'>Login</button>
         <button 
           type='button' 
-          className='w-full p-2 rounded-md bg-white flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors' 
+          className='w-full p-2 rounded-md bg-white flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors font-bold' 
           onClick={handleGoogleLogin}
         >
           Login with&nbsp;
-          <p className='text-[#4285F4] font-bold'>G</p>
-          <p className='text-[#DB4437] font-bold'>o</p>
-          <p className='text-[#F4B400] font-bold'>o</p>
-          <p className='text-[#0F9D58] font-bold'>g</p>
-          <p className='text-[#4285F4] font-bold'>l</p>
-          <p className='text-[#DB4437] font-bold'>e</p>
+          <p className='text-[#4285F4]'>G</p>
+          <p className='text-[#DB4437]'>o</p>
+          <p className='text-[#F4B400]'>o</p>
+          <p className='text-[#0F9D58]'>g</p>
+          <p className='text-[#4285F4]'>l</p>
+          <p className='text-[#DB4437]'>e</p>
         </button>
-        <p>Forgot password? <Link to="/reset" className='text-blue-500 font-bold hover:text-blue-600 transition-colors'>Reset password</Link></p>
-        <p>Don't have an account? <Link to="/register" className='text-blue-500 font-bold hover:text-blue-600 transition-colors'>Register</Link></p>
+        <div className='flex justify-between w-full text-xs'>
+          <Link to="/reset" className='text-white font-bold bg-blue-600 rounded-3xl p-2'>Forgot password?</Link>
+          <Link to="/register" className='text-white font-bold bg-blue-600 rounded-3xl p-2'>Don't have an account?</Link>
+        </div>
       </form>
     </div>
   );
